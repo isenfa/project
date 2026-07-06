@@ -10,5 +10,9 @@
             "src": "/(.*)",
             "dest": "myapp/wsgi.py"
         }
+    rom django.http import HttpResponse
+
+def home(request):
+    return HttpResponse("Hello, Vercel!")
     ]
 }
