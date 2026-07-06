@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,10 +21,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-!f0x@wv!ddj29-2mhw4-!!icn5qc01u^77arzaq%*5_lebi_y7"
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-3dpy#_4t-y59t+%d1nwm*b-ldixn%h2*v2wgg$x8x-*3z2+lgr")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = os.environ.get("DEBUG", "True") == "True"
 
 ALLOWED_HOSTS = ["*"]
 
@@ -48,6 +49,13 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Add WhiteNoise middleware only if it is installed (e.g. in Vercel environment)
+try:
+    import whitenoise  # noqa: F401
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+except ImportError:
+    pass
 
 ROOT_URLCONF = "myapp.urls"
 
@@ -115,3 +123,20 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = "static/"
+STATIC_ROOT = BASE_DIR / "staticfiles_build"
+
+# Check if WhiteNoise is available
+try:
+    import whitenoise  # noqa: F401
+    has_whitenoise = True
+except ImportError:
+    has_whitenoise = False
+
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if (os.environ.get("VERCEL") and has_whitenoise) else "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}
